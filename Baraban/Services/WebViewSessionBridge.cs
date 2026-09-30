@@ -50,9 +50,9 @@ public sealed class WebViewSessionBridge(SessionStore store)
             Value = cookie.Value,
             Domain = cookie.Domain,
             Path = cookie.Path,
-            ExpiresUtc = cookie.IsSession || cookie.Expires <= 0
+            ExpiresUtc = cookie.IsSession
                 ? null
-                : DateTimeOffset.FromUnixTimeSeconds((long)cookie.Expires),
+                : new DateTimeOffset(DateTime.SpecifyKind(cookie.Expires, DateTimeKind.Utc)),
             IsHttpOnly = cookie.IsHttpOnly,
             IsSecure = cookie.IsSecure,
             SameSite = cookie.SameSite.ToString()
@@ -76,7 +76,7 @@ public sealed class WebViewSessionBridge(SessionStore store)
             cookie.IsHttpOnly = stored.IsHttpOnly;
             cookie.IsSecure = stored.IsSecure;
             if (stored.ExpiresUtc is { } expires)
-                cookie.Expires = expires.ToUnixTimeSeconds();
+                cookie.Expires = expires.UtcDateTime;
             if (Enum.TryParse<CoreWebView2CookieSameSiteKind>(stored.SameSite, true, out var sameSite))
                 cookie.SameSite = sameSite;
             manager.AddOrUpdateCookie(cookie);
