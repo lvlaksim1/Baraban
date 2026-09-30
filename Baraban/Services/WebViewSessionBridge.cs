@@ -36,6 +36,18 @@ public sealed class WebViewSessionBridge(SessionStore store)
         };
 
         await RestoreCookiesToBrowserAsync(webView, session);
+
+        webView.NavigationCompleted += async (_, _) =>
+        {
+            try
+            {
+                await SyncCookiesFromBrowserAsync(webView, session);
+                observedHeader?.Invoke("Cookies");
+            }
+            catch
+            {
+            }
+        };
     }
 
     public async Task SyncCookiesFromBrowserAsync(WebView2 webView, SessionProfile session, string? url = null)

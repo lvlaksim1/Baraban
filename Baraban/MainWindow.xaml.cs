@@ -100,7 +100,19 @@ public partial class MainWindow : Window
         _request.Url = UrlText.Text.Trim();
         _request.Headers = ParseHeaders(HeadersText.Text);
         _request.Body = BodyText.Text;
-        AppendLog($"Request edited in memory: {_request.Name}");
+
+        if (_drum is not null)
+        {
+            var path = Path.Combine(DrumsDirectory, $"{_drum.Id}.json");
+            var json = JsonSerializer.Serialize(_drum, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+            File.WriteAllText(path, json);
+        }
+
+        AppendLog($"Request saved: {_request.Name}");
     }
 
     private async void SendRequest_Click(object sender, RoutedEventArgs e)
@@ -111,6 +123,7 @@ public partial class MainWindow : Window
         ApplyVariablesFromText();
         try
         {
+            await SyncBrowserSessionIfReadyAsync();
             var result = await _executor.SendAsync(_request, _session, _variables);
             _results[_request.Id] = result;
             WorkflowRunner.Capture(_request, result.ResponseBody, _variables);
@@ -133,6 +146,7 @@ public partial class MainWindow : Window
         ApplyVariablesFromText();
         try
         {
+            await SyncBrowserSessionIfReadyAsync();
             var runner = new WorkflowRunner(_executor);
             var results = await runner.RunAsync(_drum, _session, _variables);
             foreach (var result in results)
@@ -208,7 +222,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ImportCookieHeader_Click(object sender, RoutedEventArgs e)
+    private async void ImportCookieHeader_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new CookieImportWindow { Owner = this };
         if (dialog.ShowDialog() != true)
@@ -226,7 +240,10 @@ public partial class MainWindow : Window
             _session.Cookies.Add(new StoredCookie { Name = name, Value = value, Domain = domain, Path = "/" });
         }
         _sessionStore.Save(_session);
+        if (_browserBridge is not null)
+            await _browserBridge.RestoreCookiesToBrowserAsync(Browser, _session);
         RenderSession();
+        AppendLog("Cookie header imported and applied to browser session.");
     }
 
     private void ClearSession_Click(object sender, RoutedEventArgs e)
@@ -251,6 +268,15 @@ public partial class MainWindow : Window
         await _browserBridge.SyncCookiesFromBrowserAsync(Browser, _session);
         RenderSession();
         AppendLog($"Cookies synchronized: {_session.Cookies.Count}");
+    }
+
+    private async Task SyncBrowserSessionIfReadyAsync()
+    {
+        if (_browserBridge is null || Browser.CoreWebView2 is null)
+            return;
+
+        await _browserBridge.SyncCookiesFromBrowserAsync(Browser, _session);
+        RenderSession();
     }
 
     private static Dictionary<string, string> ParseHeaders(string raw)
