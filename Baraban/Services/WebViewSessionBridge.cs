@@ -8,7 +8,7 @@ public sealed class WebViewSessionBridge(SessionStore store)
 {
     private readonly HashSet<string> _excludedHeaders = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Cookie", "Host", "Content-Length", "Connection"
+        "Cookie", "Host", "Content-Length", "Connection", "Accept-Encoding"
     };
 
     public async Task InitializeAsync(WebView2 webView, SessionProfile session, Action<string>? observedHeader = null)
@@ -20,14 +20,22 @@ public sealed class WebViewSessionBridge(SessionStore store)
         {
             try
             {
+                var observed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var header in args.Request.Headers)
                 {
-                    if (_excludedHeaders.Contains(header.Key))
+                    if (_excludedHeaders.Contains(header.Key) || !ShouldCapture(header.Key))
                         continue;
-                    if (!ShouldCapture(header.Key))
-                        continue;
+
+                    observed[header.Key] = header.Value;
                     session.Headers[header.Key] = header.Value;
                     observedHeader?.Invoke(header.Key);
+                }
+
+                if (observed.Count > 0 && ShouldPersistRequestProfile(args.Request.Uri, observed))
+                {
+                    var key = SessionProfile.BuildRequestKey(args.Request.Method, args.Request.Uri);
+                    session.RequestHeaders[key] = observed;
+                    store.Save(session);
                 }
             }
             catch
@@ -97,8 +105,21 @@ public sealed class WebViewSessionBridge(SessionStore store)
         await Task.CompletedTask;
     }
 
+    private static bool ShouldPersistRequestProfile(string url, IReadOnlyDictionary<string, string> headers)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+            uri.AbsolutePath.Contains("/api/", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return headers.Keys.Any(key =>
+            key.Equals("Authorization", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("X-CSRF-Token", StringComparison.OrdinalIgnoreCase) ||
+            key.StartsWith("X-GIB-", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static bool ShouldCapture(string header) =>
-        header.Equals("X-CSRF-Token", StringComparison.OrdinalIgnoreCase)
+        header.Equals("Authorization", StringComparison.OrdinalIgnoreCase)
+        || header.Equals("X-CSRF-Token", StringComparison.OrdinalIgnoreCase)
         || header.StartsWith("X-GIB-", StringComparison.OrdinalIgnoreCase)
         || header.Equals("Origin", StringComparison.OrdinalIgnoreCase)
         || header.Equals("Referer", StringComparison.OrdinalIgnoreCase)

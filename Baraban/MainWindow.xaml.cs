@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Microsoft.Win32;
 using Baraban.Models;
 using Baraban.Services;
 
@@ -143,6 +144,11 @@ public partial class MainWindow : Window
     {
         if (_drum is null)
             return;
+        if (_drum.Archived)
+        {
+            MessageBox.Show(this, "Этот барабан сохранён как архивный. Автоматический запуск цепочки отключён.", "Архивный барабан", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
         ApplyVariablesFromText();
         try
         {
@@ -244,6 +250,31 @@ public partial class MainWindow : Window
             await _browserBridge.RestoreCookiesToBrowserAsync(Browser, _session);
         RenderSession();
         AppendLog("Cookie header imported and applied to browser session.");
+    }
+
+    private async void ImportCaptureZip_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Выберите ZIP записи браузерной сессии",
+            Filter = "ZIP archive (*.zip)|*.zip|All files (*.*)|*.*"
+        };
+        if (dialog.ShowDialog(this) != true)
+            return;
+
+        try
+        {
+            var importer = new CaptureZipImporter(_sessionStore);
+            var result = importer.Import(dialog.FileName, _session);
+            if (_browserBridge is not null)
+                await _browserBridge.RestoreCookiesToBrowserAsync(Browser, _session);
+            RenderSession();
+            AppendLog($"Capture ZIP imported: request profiles={result.RequestProfiles}, new cookies={result.CookiesAdded}");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Не удалось импортировать capture ZIP", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void ClearSession_Click(object sender, RoutedEventArgs e)

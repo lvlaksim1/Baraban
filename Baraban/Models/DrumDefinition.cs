@@ -6,11 +6,12 @@ public sealed class DrumDefinition
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
     public string LoginUrl { get; set; } = "";
+    public bool Archived { get; set; }
     public Dictionary<string, string> Variables { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public List<HttpRequestDefinition> Requests { get; set; } = [];
     public ResultMapping? Result { get; set; }
 
-    public override string ToString() => Name;
+    public override string ToString() => Archived ? $"[АРХИВ] {Name}" : Name;
 }
 
 public sealed class HttpRequestDefinition

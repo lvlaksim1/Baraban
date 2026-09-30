@@ -3,8 +3,17 @@ namespace Baraban.Models;
 public sealed class SessionProfile
 {
     public Dictionary<string, string> Headers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, Dictionary<string, string>> RequestHeaders { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public List<StoredCookie> Cookies { get; set; } = [];
     public DateTimeOffset UpdatedUtc { get; set; } = DateTimeOffset.UtcNow;
+
+    public static string BuildRequestKey(string method, string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return $"{method.Trim().ToUpperInvariant()} {url.Trim()}";
+
+        return $"{method.Trim().ToUpperInvariant()} {uri.Scheme}://{uri.Host}{uri.AbsolutePath}";
+    }
 }
 
 public sealed class StoredCookie

@@ -77,6 +77,7 @@
                         <Button Content="Перечитать" Click="ReloadSession_Click"/>
                         <Button Content="Сохранить JSON" Click="SaveSession_Click" Margin="8,0,0,0"/>
                         <Button Content="Импорт Cookie header" Click="ImportCookieHeader_Click" Margin="8,0,0,0"/>
+                        <Button Content="Импорт capture ZIP" Click="ImportCaptureZip_Click" Margin="8,0,0,0"/>
                         <Button Content="Очистить сессию" Click="ClearSession_Click" Margin="8,0,0,0"/>
                     </StackPanel>
                     <TextBox x:Name="SessionText" Grid.Row="1" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Consolas"/>

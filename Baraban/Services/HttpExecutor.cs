@@ -27,6 +27,14 @@ public sealed class HttpExecutor
 
         foreach (var pair in session.Headers)
             TryAddHeader(request, pair.Key, TemplateResolver.Resolve(pair.Value, variables));
+
+        var requestKey = SessionProfile.BuildRequestKey(method.Method, url);
+        if (session.RequestHeaders.TryGetValue(requestKey, out var requestHeaders))
+        {
+            foreach (var pair in requestHeaders)
+                TryAddHeader(request, pair.Key, TemplateResolver.Resolve(pair.Value, variables));
+        }
+
         foreach (var pair in definition.Headers.Where(x => !x.Key.Equals("Cookie", StringComparison.OrdinalIgnoreCase)))
             TryAddHeader(request, pair.Key, TemplateResolver.Resolve(pair.Value, variables));
 
@@ -85,6 +93,8 @@ public sealed class HttpExecutor
         if (key.Equals("Cookie", StringComparison.OrdinalIgnoreCase) ||
             key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase) ||
             key.Equals("Host", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("Connection", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("Accept-Encoding", StringComparison.OrdinalIgnoreCase) ||
             key.Equals("Content-Type", StringComparison.OrdinalIgnoreCase))
             return;
 
