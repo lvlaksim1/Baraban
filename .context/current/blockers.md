@@ -1,5 +1,6 @@
 # Current blockers and open risks
 
-- The retained Postman collection contains the confirmed `confirmDrumOffer` requests but not the exact historical request contracts for `getCustomerOffersDrum` and `getOfferDrums`.
-- Therefore the first module is compilable but not yet claimed to be end-to-end live verified.
-- Fresh authenticated traffic is required to validate those two request bodies, response shapes and the source of the current `advertCampaignId`.
+- The owner-supplied `bodies.zip` attachment was not mounted in the active runtime, so raw saved response-body files were not directly inspected.
+- This did not block reconstruction of the current request chain: request bodies are present in `requests.json/network.har`, and the loaded production JS independently confirms the `available`, `offerWinId`, `offerDrumId`, campaign and confirmation logic.
+- End-to-end execution from Baraban itself against a live authenticated session is still not verified.
+- Imported request-specific X-GIB headers may have server-defined freshness/replay constraints; live WebView2 capture remains the preferred source when available.

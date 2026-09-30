@@ -1,8 +1,8 @@
 # Manager plans
 
-1. Keep the green MVP as the baseline.
-2. Run the application against a fresh authenticated Alfa session.
-3. Capture the actual current `getCustomerOffersDrum` and `getOfferDrums` request/response contracts through the application's editable/browser tooling.
-4. Update the first drum definition with verified request bodies/capture paths.
-5. Verify winner visualization and explicit `confirmDrumOffer` flow.
-6. Only then package a user-testable release if requested.
+1. Treat the archived 17.09 module as read-only historical context unless the owner supplies additional evidence.
+2. Use the 30.09 Alfa-Friday module as the current test target.
+3. Verify the non-mutating chain locally on Windows with the owner's saved capture/import path.
+4. Compare the app-generated variables and result table against the captured sequence.
+5. Resolve any replay limitations of request-specific security headers using live WebView2 traffic rather than hard-coded secrets.
+6. Keep confirmation explicit and separate from discovery/visualization.

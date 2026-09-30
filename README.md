@@ -1,83 +1,68 @@
 # Baraban
 
-Windows-приложение для модульных сценариев «барабанов призов» и других похожих HTTP-workflow.
+Windows-приложение для модульных сценариев «барабанов призов» и похожих HTTP-workflow.
 
-## Что уже есть
+## Текущее состояние
 
-- **Несколько барабанов**: определения загружаются из `Baraban/Drums/*.json`. Ядро приложения не привязано к одному API.
-- **Обычная авторизация через сайт** во встроенном WebView2 с постоянным профилем.
-- **Долговечная сессия**:
-  - профиль WebView2 хранится в `%LOCALAPPDATA%\Baraban\WebView2`;
-  - HTTP-копия cookies/headers хранится в `%LOCALAPPDATA%\Baraban\session.bin`;
-  - `session.bin` защищён Windows DPAPI и читается только текущим Windows-пользователем;
-  - приложение не вводит собственный короткий TTL: cookie используется, пока не истёк её серверный expiry или сервер не перестал её принимать.
-- **Ручная авторизация**:
-  - импорт обычного `Cookie:` header;
-  - полный Session JSON с cookies и headers можно просматривать и редактировать.
-- **HTTP inspector/editor**:
-  - method;
-  - URL (включая query string);
-  - headers;
-  - Cookie override;
-  - body;
-  - response.
-- **Редактирование запросов сохраняется** обратно в JSON-модуль барабана.
-- Перед отправкой запроса/цепочки приложение синхронизирует актуальные cookies из встроенного браузера.
-- `confirmDrumOffer` помечен как подтверждающее действие и **не запускается автоматически**.
+В приложении два Alfa-модуля:
 
-## Первый модуль: Alfa — Loyalty Roulette
+- **Alfa-Пятница — Tasty Coffee (30.09.2026)** — текущий рабочий модуль, восстановленный по браузерной сессии.
+- **[АРХИВ] Alfa — Loyalty Roulette (снимок 17.09.2026)** — сохранён без дальнейшего развития; автоматический запуск цепочки для архивных модулей отключён.
 
-Файл: `Baraban/Drums/alfa-loyalty-roulette.json`.
+## Что умеет приложение
 
-Подтверждённый по ранее записанной сетевой активности endpoint:
+- Несколько независимых барабанов через `Baraban/Drums/*.json`.
+- Обычный вход через встроенный WebView2 с постоянным профилем.
+- Альтернативная работа с сохранённой сессией:
+  - ручной `Cookie:` header;
+  - полный редактируемый Session JSON;
+  - импорт ZIP браузерного рекордера, если внутри есть `requests.json`.
+- Локальное хранение сессии в `%LOCALAPPDATA%\Baraban\session.bin` с защитой Windows DPAPI.
+- Cookies не получают искусственный TTL от Baraban: серверный expiry/rejection остаётся авторитетным.
+- Request-specific профили заголовков. Это важно для защитных `X-GIB-*`, которые в реальной сессии различались между endpoint'ами.
+- Редактирование Method / URL / query / headers / body / Cookie override.
+- Последовательные запросы с `{{variable}}` и JSON-capture.
+- Таблица вариантов призов и выделение `★ WINNER`.
+- Подтверждающие запросы не выполняются автоматически.
+
+## Рабочий Alfa-Пятница workflow
+
+Файл: `Baraban/Drums/alfa-friday-tasty-coffee-2026-09-30.json`.
+
+Текущий offer URL:
 
 ```
-POST https://link.alfabank.ru/partner-offers/api/LoyaltyRouletteService/confirmDrumOffer
+https://link.alfabank.ru/partner-offers/friday/21898
 ```
 
-Исторический пример payload из сетевого захвата:
+Цепочка:
 
-```json
-{
-  "advertCampaignId": 21541,
-  "offerWinId": 21445
-}
-```
+1. `GET /partner-offers/api/v1/offer/{offerId}`
+   - `$.drumId -> advertCampaignId`
+2. `POST /partner-offers/api/LoyaltyRouletteService/getCustomerOffersDrum`
+   - body: `{"advertCampaignId": {{advertCampaignId}}}`
+   - `$.available -> available`
+   - `$.offerWinId -> offerWinId`
+3. `POST /partner-offers/api/LoyaltyRouletteService/getOfferDrums`
+   - body: `{"offerDrumId": {{available}}}`
+4. Baraban показывает варианты и отмечает строку, где `offerDrumId == offerWinId`.
+5. `confirmDrumOffer` доступен только как отдельный явный запрос.
 
-Эти ID **не зашиты как рабочие значения**. Они приведены только как пример структуры.
+Для диагностики в модуле сохранён и реальный `getAdvertCampaign({})`, но рабочая цепочка не нуждается в жёстко прошитом `advertCampaignId`.
 
-Модуль также содержит заготовки для:
+Санитизированное восстановление исходной сессии: `docs/research/alfa-friday-2026-09-30.md`.
+
+## Почему request-specific headers
+
+В записи 30.09.2026 значения защитных заголовков различались между:
 
 - `getCustomerOffersDrum`;
 - `getOfferDrums`;
-- извлечения `offerWinId`;
-- построения таблицы призов;
-- сопоставления `offerDrumId == offerWinId`;
-- отображения `★ WINNER`.
+- `confirmDrumOffer`.
 
-Важно: точные тела `getCustomerOffersDrum` и `getOfferDrums` не были сохранены в доступной Postman-коллекции, поэтому текущие body в модуле отмечены как редактируемые шаблоны. Перед живым использованием их нужно сверить с актуальной сетевой активностью браузера. `confirmDrumOffer` восстановлен из реального захвата.
+Поэтому Baraban хранит заголовки по ключу `METHOD + endpoint`, а не только один глобальный набор.
 
-## Архитектура
-
-```
-WPF shell
-├── WebView2 login/profile
-├── SessionStore
-│   ├── persistent cookies
-│   ├── editable headers
-│   └── DPAPI encrypted local storage
-├── HTTP editor/executor
-├── DrumRepository
-│   └── Drums/*.json
-├── WorkflowRunner
-│   ├── sequential requests
-│   ├── JSON captures → variables
-│   └── {{variable}} substitution
-└── ResultProjector
-    └── prize table / winner highlighting
-```
-
-Слой авторизации отделён от определения барабана. Один и тот же Session может использоваться несколькими модулями.
+При импорте recorder ZIP реальные cookies/CSRF/X-GIB остаются локально и записываются только в DPAPI-защищённую сессию. В публичный репозиторий они не попадают.
 
 ## Сборка
 
@@ -92,9 +77,8 @@ dotnet restore Baraban/Baraban.csproj
 dotnet build Baraban/Baraban.csproj -c Release
 ```
 
-CI собирает проект на Windows runner при изменениях кода.
+GitHub Actions собирает проект на Windows.
 
 ## Безопасность репозитория
 
-Репозиторий публичный. Реальные cookies, CSRF-токены, `X-GIB-*` и другие значения пользовательской сессии в исходники **не добавляются**.
-
+Репозиторий публичный. Реальные cookies, токены, CSRF, `X-GIB-*` и другие значения пользовательской сессии запрещено коммитить.
