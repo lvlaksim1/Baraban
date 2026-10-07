@@ -5,3 +5,14 @@
 *.suo
 *.pdb
 *.log
+
+# Repository storage policy
+/dist/
+/build/
+*.exe
+*.msi
+*.zip
+*.7z
+*.rar
+*.dll
+*.pdb
