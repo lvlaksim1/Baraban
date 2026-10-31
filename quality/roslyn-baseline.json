@@ -1,0 +1,13 @@
+{
+  "schema": "engineering-roslyn-baseline-v1",
+  "created_utc": "2026-10-31T13:38:32.038687+00:00",
+  "reference_commit": "66f4d5e3807db477eff2e295371567af58455083",
+  "metrics": {
+    "files_scanned": 15,
+    "types_count": 21,
+    "methods_count": 60,
+    "over_complexity_count": 0,
+    "duplicate_method_groups": 1
+  },
+  "source": "Roslyn syntax tree, no semantic binding or runtime evidence"
+}
