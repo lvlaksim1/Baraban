@@ -3,5 +3,30 @@
   "owner": "project:lvlaksim1/Baraban",
   "created_at": "2026-11-01T11:22:58+00:00",
   "migration_status": "requires_manager_reconciliation",
-  "tasks": []
+  "tasks": [
+    {
+      "id": "TASK-HIST-20261101-baraban-authenticated-readonly-chain",
+      "title": "Провести авторизованную немутирующую приёмку Baraban Alfa-Friday с проверкой рекламной кампании, доступности и динамических заголовков",
+      "priority": "P1",
+      "status": "open",
+      "created_at": "2026-11-01T19:06:07+00:00",
+      "updated_at": "2026-11-01T19:06:07+00:00",
+      "source_handoff": "",
+      "history": [
+        {
+          "at": "2026-11-01T19:06:07+00:00",
+          "actor": "agent:ecosystem-supervisor",
+          "action": "created",
+          "detail": "direct"
+        }
+      ],
+      "acceptance_criteria": "На разрешённой сессии документировать advertCampaignId, available, offerWinId, таблицу призов и серверное поведение request-specific headers без вызова confirmDrumOffer и без неподтверждённых денежных/игровых действий.",
+      "source_ref": ".context/current/next.md",
+      "source_evidence": {
+        "reference": ".context/current/next.md",
+        "sha256": "07549ad843b1910177410a201f072f0a4f3cef45d7ef1ace93e26994d7cf03fd"
+      },
+      "reconciliation_status": "pending_manager_review"
+    }
+  ]
 }
